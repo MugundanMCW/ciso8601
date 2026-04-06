@@ -78,23 +78,29 @@ jobs:
   
     build_wheels:
       name: Build wheel on ${{ matrix.os }}
-      # needs: [sanity_check]
       runs-on: ${{ matrix.os }}
       strategy:
         matrix:
-          os: [ubuntu-latest, windows-latest, windows-11-arm, macos-latest]
-  
+          include:
+            - os: ubuntu-latest
+            - os: windows-latest
+              cibw_archs: "AMD64"
+            - os: windows-11-arm
+              cibw_archs: "ARM64"
+            - os: macos-latest
       steps:
         - uses: actions/checkout@v5
-  
-        - name: Set up QEMU # Needed to build aarch64 wheels
+    
+        - name: Set up QEMU
           if: runner.os == 'Linux'
           uses: docker/setup-qemu-action@v3
           with:
             platforms: all
-  
+    
         - uses: closeio/cibuildwheel@v3.1.4
-  
+          env:
+            CIBW_ARCHS: ${{ matrix.cibw_archs }}  # overrides toml config per-runner
+    
         - uses: actions/upload-artifact@v4
           with:
             name: ${{ matrix.os }}-wheels
